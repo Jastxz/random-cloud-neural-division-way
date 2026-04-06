@@ -89,21 +89,26 @@ end
     generar_iris_sintetico(; n=150, rng=Random.default_rng())
 
 Iris sintético: 4 features, 3 clases con distribuciones gaussianas separadas.
+Basado en las estadísticas reales del dataset UCI Iris.
 """
 function generar_iris_sintetico(; n::Int=150, rng=Random.default_rng())
     n_per_class = n ÷ 3
-    # Centroides de cada clase (4 features)
+    # Centroides y desviaciones basados en el Iris real
     centroides = [
-        [5.0, 3.4, 1.5, 0.2],   # Setosa
-        [5.9, 2.8, 4.3, 1.3],   # Versicolor
-        [6.6, 3.0, 5.6, 2.0],   # Virginica
+        [5.006, 3.428, 1.462, 0.246],   # Setosa
+        [5.936, 2.770, 4.260, 1.326],   # Versicolor
+        [6.588, 2.974, 5.552, 2.026],   # Virginica
     ]
-    σ = [0.4, 0.3, 0.5, 0.2]
+    σ = [
+        [0.35, 0.38, 0.17, 0.11],
+        [0.52, 0.31, 0.47, 0.20],
+        [0.64, 0.32, 0.55, 0.27],
+    ]
 
     datos_x = zeros(4, 0)
     labels = Int[]
     for (c, centro) in enumerate(centroides)
-        bloque = centro .+ σ .* randn(rng, 4, n_per_class)
+        bloque = centro .+ σ[c] .* randn(rng, 4, n_per_class)
         datos_x = hcat(datos_x, bloque)
         append!(labels, fill(c, n_per_class))
     end
@@ -271,4 +276,152 @@ function generar_alta_dimensionalidad(; n::Int=100, n_features::Int=100,
         append!(labels, fill(c, n_per_class))
     end
     (datos_x, onehot(labels, n_clases))
+end
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 5. Datasets inspirados en los papers (UCI-like sintéticos)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+"""
+    generar_glass_sintetico(; n=214, rng=Random.default_rng())
+
+Glass sintético: 9 features, 6 clases. Pocas muestras por clase.
+Basado en las estadísticas del UCI Glass Identification dataset.
+El paper de DivisionNeuronal reporta +37pp vs red completa aquí.
+"""
+function generar_glass_sintetico(; n::Int=214, rng=Random.default_rng())
+    n_clases = 6
+    n_per_class = n ÷ n_clases
+    n_features = 9
+
+    # Centroides inspirados en las propiedades del vidrio real
+    # RI, Na, Mg, Al, Si, K, Ca, Ba, Fe
+    centroides = [
+        [1.518, 13.0, 3.5, 1.2, 72.6, 0.6, 8.9, 0.0, 0.0],  # building_windows_float
+        [1.517, 13.4, 3.5, 1.4, 72.9, 0.6, 8.4, 0.0, 0.1],  # building_windows_non_float
+        [1.518, 13.3, 3.5, 1.4, 72.2, 0.6, 8.6, 0.0, 0.0],  # vehicle_windows
+        [1.517, 14.8, 2.0, 3.5, 72.0, 0.0, 7.8, 0.0, 0.0],  # containers
+        [1.517, 13.3, 0.0, 2.0, 73.0, 0.8, 11.0, 0.0, 0.0], # tableware
+        [1.516, 14.5, 0.0, 2.2, 73.0, 0.0, 8.5, 1.6, 0.0],  # headlamps
+    ]
+    σ = [0.003, 0.8, 1.0, 0.5, 0.8, 0.3, 1.0, 0.5, 0.1]
+
+    datos_x = zeros(n_features, 0)
+    labels = Int[]
+    for (c, centro) in enumerate(centroides)
+        bloque = centro .+ σ .* randn(rng, n_features, n_per_class)
+        datos_x = hcat(datos_x, bloque)
+        append!(labels, fill(c, n_per_class))
+    end
+    (datos_x, onehot(labels, n_clases))
+end
+
+"""
+    generar_ecoli_sintetico(; n=327, rng=Random.default_rng())
+
+Ecoli sintético: 7 features, 5 clases. Pocas muestras, muchas clases.
+Basado en el UCI Ecoli dataset (localización de proteínas).
+El paper de DivisionNeuronal reporta +11pp vs red completa aquí.
+"""
+function generar_ecoli_sintetico(; n::Int=327, rng=Random.default_rng())
+    n_clases = 5
+    n_per_class = n ÷ n_clases
+    n_features = 7
+
+    # mcg, gvh, lip, chg, aac, alm1, alm2
+    centroides = [
+        [0.50, 0.47, 0.48, 0.50, 0.49, 0.56, 0.40],  # cp (cytoplasm)
+        [0.72, 0.48, 0.48, 0.50, 0.54, 0.35, 0.40],  # im (inner membrane)
+        [0.62, 0.47, 1.00, 0.50, 0.47, 0.45, 0.42],  # imL
+        [0.44, 0.50, 0.48, 0.50, 0.42, 0.67, 0.36],  # om (outer membrane)
+        [0.33, 0.47, 0.48, 0.50, 0.55, 0.78, 0.38],  # pp (periplasm)
+    ]
+    σ = [0.15, 0.10, 0.05, 0.05, 0.10, 0.15, 0.10]
+
+    datos_x = zeros(n_features, 0)
+    labels = Int[]
+    for (c, centro) in enumerate(centroides)
+        bloque = centro .+ σ .* randn(rng, n_features, n_per_class)
+        datos_x = hcat(datos_x, bloque)
+        append!(labels, fill(c, n_per_class))
+    end
+    (datos_x, onehot(labels, n_clases))
+end
+
+"""
+    generar_seeds_sintetico(; n=210, rng=Random.default_rng())
+
+Seeds sintético: 7 features, 3 clases (variedades de trigo).
+Basado en el UCI Seeds dataset.
+El paper de DivisionNeuronal identifica Area como feature dominante (94%).
+"""
+function generar_seeds_sintetico(; n::Int=210, rng=Random.default_rng())
+    n_per_class = n ÷ 3
+    n_features = 7
+
+    # Area, Perimeter, Compactness, KernelLength, KernelWidth, Asymmetry, GrooveLength
+    centroides = [
+        [14.3, 14.1, 0.88, 5.5, 3.2, 2.7, 5.1],  # Kama
+        [18.3, 16.1, 0.88, 6.2, 3.7, 3.6, 6.1],  # Rosa
+        [11.9, 13.3, 0.85, 5.2, 2.9, 4.9, 4.9],  # Canadian
+    ]
+    σ = [1.5, 0.8, 0.02, 0.3, 0.2, 1.0, 0.3]
+
+    datos_x = zeros(n_features, 0)
+    labels = Int[]
+    for (c, centro) in enumerate(centroides)
+        bloque = centro .+ σ .* randn(rng, n_features, n_per_class)
+        datos_x = hcat(datos_x, bloque)
+        append!(labels, fill(c, n_per_class))
+    end
+    (datos_x, onehot(labels, 3))
+end
+
+"""
+    generar_sonar_sintetico(; n=208, rng=Random.default_rng())
+
+Sonar sintético: 10 features (reducido de 60), 2 clases.
+Basado en el UCI Sonar dataset (minas vs rocas).
+El paper de RandomCloud reporta +4.9pp y 87% reducción de parámetros aquí.
+"""
+function generar_sonar_sintetico(; n::Int=208, rng=Random.default_rng())
+    n_half = n ÷ 2
+    n_features = 10
+
+    # Minas: señales más fuertes en frecuencias medias
+    centro_minas = [0.3, 0.4, 0.5, 0.6, 0.5, 0.4, 0.3, 0.2, 0.15, 0.1]
+    # Rocas: señales más uniformes
+    centro_rocas = [0.2, 0.25, 0.3, 0.35, 0.35, 0.3, 0.25, 0.2, 0.15, 0.1]
+    σ = fill(0.12, n_features)
+
+    x_minas = centro_minas .+ σ .* randn(rng, n_features, n_half)
+    x_rocas = centro_rocas .+ σ .* randn(rng, n_features, n - n_half)
+
+    datos_x = hcat(x_minas, x_rocas)
+    labels = vcat(zeros(Int, n_half), ones(Int, n - n_half))
+    (datos_x, binarylabel(labels))
+end
+
+"""
+    generar_ionosphere_sintetico(; n=351, rng=Random.default_rng())
+
+Ionosphere sintético: 10 features (reducido de 34), 2 clases.
+Basado en el UCI Ionosphere dataset (buenas vs malas señales de radar).
+El paper de RandomCloud reporta 90% accuracy con 81% reducción aquí.
+"""
+function generar_ionosphere_sintetico(; n::Int=351, rng=Random.default_rng())
+    n_good = round(Int, n * 0.64)  # 64% good en el dataset real
+    n_bad = n - n_good
+    n_features = 10
+
+    centro_good = [0.6, 0.1, 0.5, 0.3, 0.4, 0.2, 0.3, 0.1, 0.2, 0.1]
+    centro_bad = [0.1, 0.0, 0.2, 0.1, 0.1, 0.0, 0.1, 0.0, 0.1, 0.0]
+    σ = fill(0.2, n_features)
+
+    x_good = centro_good .+ σ .* randn(rng, n_features, n_good)
+    x_bad = centro_bad .+ σ .* randn(rng, n_features, n_bad)
+
+    datos_x = hcat(x_good, x_bad)
+    labels = vcat(ones(Int, n_good), zeros(Int, n_bad))
+    (datos_x, binarylabel(labels))
 end

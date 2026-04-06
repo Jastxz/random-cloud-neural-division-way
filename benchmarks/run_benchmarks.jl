@@ -127,27 +127,42 @@ end
 function benchmarks_multiclase(rng)
     resultados = RCND.InformeBenchmark[]
 
-    push!(resultados, bench("Iris sintético (n=150)", generar_iris_sintetico(; n=150, rng=copy(rng))...;
-        tamano_nube=10, umbral_acierto=0.85, epocas_refinamiento=500,
-        topologia_inicial=[4, 8, 3]))
+    # ── Iris: 4 features, 3 clases ───────────────────────────────────────────
+    # Umbral bajo (0.4) para que la exploración aleatoria encuentre candidatos
+    # La precisión real viene del refinamiento posterior
+    push!(resultados, bench("Iris 1-capa (n=150)", generar_iris_sintetico(; n=150, rng=copy(rng))...;
+        tamano_nube=30, umbral_acierto=0.4, epocas_refinamiento=2000,
+        topologia_inicial=[4, 8, 3], tasa_aprendizaje_nube=0.1))
 
-    push!(resultados, bench("Iris sintético (n=600)", generar_iris_sintetico(; n=600, rng=copy(rng))...;
-        tamano_nube=15, umbral_acierto=0.9, epocas_refinamiento=1000,
-        topologia_inicial=[4, 10, 3], batch_size_nube=32))
+    push!(resultados, bench("Iris 2-capas (n=150)", generar_iris_sintetico(; n=150, rng=copy(rng))...;
+        tamano_nube=30, umbral_acierto=0.4, epocas_refinamiento=2000,
+        topologia_inicial=[4, 10, 6, 3], tasa_aprendizaje_nube=0.1))
 
-    push!(resultados, bench("Wine sintético (n=178)", generar_wine_sintetico(; n=178, rng=copy(rng))...;
-        tamano_nube=10, umbral_acierto=0.8, epocas_refinamiento=500,
-        topologia_inicial=[13, 10, 3]))
+    push!(resultados, bench("Iris 3-capas (n=150)", generar_iris_sintetico(; n=150, rng=copy(rng))...;
+        tamano_nube=40, umbral_acierto=0.4, epocas_refinamiento=2000,
+        topologia_inicial=[4, 12, 8, 6, 3], tasa_aprendizaje_nube=0.05))
 
-    push!(resultados, bench("Wine sintético (n=500)", generar_wine_sintetico(; n=500, rng=copy(rng))...;
-        tamano_nube=15, umbral_acierto=0.85, epocas_refinamiento=1000,
-        topologia_inicial=[13, 12, 3], batch_size_nube=32))
+    push!(resultados, bench("Iris 2-capas (n=600)", generar_iris_sintetico(; n=600, rng=copy(rng))...;
+        tamano_nube=30, umbral_acierto=0.4, epocas_refinamiento=2000,
+        topologia_inicial=[4, 12, 8, 3], tasa_aprendizaje_nube=0.05,
+        batch_size_nube=32))
 
-    # Nota: dígitos con 10 clases genera 2^10-1 = 1023 subconfiguraciones en división
-    # Puede ser lento. Usamos pocas features para mantenerlo manejable.
-    push!(resultados, bench("Dígitos (10f, 5c, n=250)", generar_digitos_reducido(; n=250, n_features=10, n_clases=5, rng=copy(rng))...;
-        tamano_nube=15, umbral_acierto=0.7, epocas_refinamiento=1000,
-        topologia_inicial=[10, 12, 5], batch_size_nube=32,
+    # ── Wine: 13 features, 3 clases ──────────────────────────────────────────
+    push!(resultados, bench("Wine 2-capas (n=178)", generar_wine_sintetico(; n=178, rng=copy(rng))...;
+        tamano_nube=25, umbral_acierto=0.4, epocas_refinamiento=1500,
+        topologia_inicial=[13, 10, 6, 3], tasa_aprendizaje_nube=0.05))
+
+    push!(resultados, bench("Wine 3-capas (n=500)", generar_wine_sintetico(; n=500, rng=copy(rng))...;
+        tamano_nube=30, umbral_acierto=0.4, epocas_refinamiento=2000,
+        topologia_inicial=[13, 12, 8, 6, 3], tasa_aprendizaje_nube=0.03,
+        batch_size_nube=32))
+
+    # ── Dígitos: 10 features, 5 clases ───────────────────────────────────────
+    # 5 clases → probabilidad aleatoria ~20%, umbral 0.25 para exploración
+    push!(resultados, bench("Dígitos 2-capas (5c)", generar_digitos_reducido(; n=250, n_features=10, n_clases=5, rng=copy(rng))...;
+        tamano_nube=40, umbral_acierto=0.25, epocas_refinamiento=2000,
+        topologia_inicial=[10, 15, 10, 5], tasa_aprendizaje_nube=0.03,
+        batch_size_nube=32,
         epochs_division=200, paciencia_division=30))
 
     resultados
@@ -156,29 +171,38 @@ end
 function benchmarks_sinteticos(rng)
     resultados = RCND.InformeBenchmark[]
 
-    push!(resultados, bench("Blobs (2f, 3c, sep=3)", generar_blobs(; n=300, n_clases=3, n_features=2, separacion=3.0, rng=copy(rng))...;
-        tamano_nube=10, umbral_acierto=0.85, epocas_refinamiento=500,
-        topologia_inicial=[2, 6, 3]))
-
-    push!(resultados, bench("Blobs (2f, 5c, sep=4)", generar_blobs(; n=500, n_clases=5, n_features=2, separacion=4.0, rng=copy(rng))...;
-        tamano_nube=15, umbral_acierto=0.8, epocas_refinamiento=1000,
-        topologia_inicial=[2, 10, 5], batch_size_nube=32))
-
-    push!(resultados, bench("Blobs (4f, 3c, sep=2)", generar_blobs(; n=300, n_clases=3, n_features=4, separacion=2.0, rng=copy(rng))...;
-        tamano_nube=10, umbral_acierto=0.8, epocas_refinamiento=500,
-        topologia_inicial=[4, 8, 3]))
-
-    push!(resultados, bench("Checkerboard (4×4, n=600)", generar_checkerboard(; n=600, tamano=4, rng=copy(rng))...;
-        tamano_nube=20, umbral_acierto=0.75, epocas_refinamiento=1000,
-        topologia_inicial=[2, 10, 1]))
-
-    push!(resultados, bench("Anillos (3, n=600)", generar_anillos(; n=600, n_anillos=3, rng=copy(rng))...;
-        tamano_nube=15, umbral_acierto=0.8, epocas_refinamiento=1000,
-        topologia_inicial=[2, 8, 3]))
-
-    push!(resultados, bench("Anillos (5, n=1000)", generar_anillos(; n=1000, n_anillos=5, ruido=0.1, rng=copy(rng))...;
+    # ── Blobs multiclase con topologías multicapa ─────────────────────────────
+    push!(resultados, bench("Blobs 2-capas (3c)", generar_blobs(; n=300, n_clases=3, n_features=2, separacion=3.0, rng=copy(rng))...;
         tamano_nube=20, umbral_acierto=0.7, epocas_refinamiento=1000,
-        topologia_inicial=[2, 12, 5], batch_size_nube=32,
+        topologia_inicial=[2, 8, 6, 3]))
+
+    push!(resultados, bench("Blobs 2-capas (5c)", generar_blobs(; n=500, n_clases=5, n_features=2, separacion=4.0, rng=copy(rng))...;
+        tamano_nube=25, umbral_acierto=0.6, epocas_refinamiento=1500,
+        topologia_inicial=[2, 12, 10, 5], tasa_aprendizaje_nube=0.05,
+        batch_size_nube=32))
+
+    push!(resultados, bench("Blobs 3-capas (3c, 4f)", generar_blobs(; n=300, n_clases=3, n_features=4, separacion=2.0, rng=copy(rng))...;
+        tamano_nube=20, umbral_acierto=0.7, epocas_refinamiento=1000,
+        topologia_inicial=[4, 10, 8, 6, 3], tasa_aprendizaje_nube=0.05))
+
+    # ── Checkerboard (binario, pero difícil — necesita profundidad) ───────────
+    push!(resultados, bench("Checker 2-capas (4×4)", generar_checkerboard(; n=600, tamano=4, rng=copy(rng))...;
+        tamano_nube=20, umbral_acierto=0.7, epocas_refinamiento=1000,
+        topologia_inicial=[2, 12, 8, 1]))
+
+    push!(resultados, bench("Checker 3-capas (4×4)", generar_checkerboard(; n=600, tamano=4, rng=copy(rng))...;
+        tamano_nube=25, umbral_acierto=0.7, epocas_refinamiento=1500,
+        topologia_inicial=[2, 14, 10, 6, 1], tasa_aprendizaje_nube=0.05))
+
+    # ── Anillos multiclase con multicapa ──────────────────────────────────────
+    push!(resultados, bench("Anillos 2-capas (3)", generar_anillos(; n=600, n_anillos=3, rng=copy(rng))...;
+        tamano_nube=20, umbral_acierto=0.6, epocas_refinamiento=1000,
+        topologia_inicial=[2, 10, 8, 3]))
+
+    push!(resultados, bench("Anillos 3-capas (5)", generar_anillos(; n=600, n_anillos=5, ruido=0.1, rng=copy(rng))...;
+        tamano_nube=25, umbral_acierto=0.5, epocas_refinamiento=1500,
+        topologia_inicial=[2, 14, 10, 8, 5], tasa_aprendizaje_nube=0.03,
+        batch_size_nube=32,
         epochs_division=200, paciencia_division=30))
 
     resultados
@@ -187,7 +211,6 @@ end
 function benchmarks_robustez(rng)
     resultados = RCND.InformeBenchmark[]
 
-    # Ruido con pocas features para que no tarde demasiado
     push!(resultados, bench("Ruido (4+6 feat)", generar_con_ruido(; n=200, n_features_utiles=4, n_features_ruido=6, rng=copy(rng))...;
         tamano_nube=10, umbral_acierto=0.8, epocas_refinamiento=300,
         topologia_inicial=[10, 6, 1]))
@@ -199,6 +222,82 @@ function benchmarks_robustez(rng)
     push!(resultados, bench("Desbalanceado (95/5)", generar_desbalanceado(; n=500, ratio_minoritaria=0.05, rng=copy(rng))...;
         tamano_nube=10, umbral_acierto=0.8, epocas_refinamiento=500,
         topologia_inicial=[4, 6, 1], batch_size_nube=32))
+
+    resultados
+end
+
+# ── Datasets de los papers ────────────────────────────────────────────────────
+# Parámetros calibrados según los resultados publicados:
+# - RandomCloud: cloud=50, threshold=0.3-0.5, 1000 épocas refinamiento
+# - DivisionNeuronal: threshold=0.4, 1000 épocas Adam, paciencia=50
+
+function benchmarks_papers(rng)
+    resultados = RCND.InformeBenchmark[]
+
+    # ── Binarios del paper de RandomCloud ─────────────────────────────────────
+
+    # Sonar: 10 features, 2 clases — el mejor resultado del paper (+4.9pp, 87% reducción)
+    push!(resultados, bench("Sonar (10f, n=208)", generar_sonar_sintetico(; n=208, rng=copy(rng))...;
+        tamano_nube=50, umbral_acierto=0.5, epocas_refinamiento=1000,
+        topologia_inicial=[10, 8, 1], tasa_aprendizaje_nube=0.1))
+
+    # Ionosphere: 10 features, 2 clases — 90% accuracy, 81% reducción
+    push!(resultados, bench("Ionosphere (10f, n=351)", generar_ionosphere_sintetico(; n=351, rng=copy(rng))...;
+        tamano_nube=50, umbral_acierto=0.5, epocas_refinamiento=1000,
+        topologia_inicial=[10, 8, 1], tasa_aprendizaje_nube=0.1))
+
+    # ── Multiclase del paper de DivisionNeuronal ──────────────────────────────
+
+    # Glass: 9 features, 6 clases — el resultado estrella (+37pp vs red completa)
+    # ≤15 inputs → búsqueda exhaustiva factible
+    push!(resultados, bench("Glass (9f, 6c, n=214)", generar_glass_sintetico(; n=214, rng=copy(rng))...;
+        tamano_nube=50, umbral_acierto=0.3, epocas_refinamiento=1000,
+        topologia_inicial=[9, 12, 6], tasa_aprendizaje_nube=0.1,
+        umbral_division=0.4, epochs_division=1000, paciencia_division=50))
+
+    # Ecoli: 7 features, 5 clases — +11pp vs red completa
+    push!(resultados, bench("Ecoli (7f, 5c, n=327)", generar_ecoli_sintetico(; n=327, rng=copy(rng))...;
+        tamano_nube=50, umbral_acierto=0.3, epocas_refinamiento=1000,
+        topologia_inicial=[7, 10, 5], tasa_aprendizaje_nube=0.1,
+        umbral_division=0.4, epochs_division=1000, paciencia_division=50))
+
+    # Seeds: 7 features, 3 clases — Area como feature dominante (94%)
+    push!(resultados, bench("Seeds (7f, 3c, n=210)", generar_seeds_sintetico(; n=210, rng=copy(rng))...;
+        tamano_nube=50, umbral_acierto=0.4, epocas_refinamiento=1000,
+        topologia_inicial=[7, 8, 3], tasa_aprendizaje_nube=0.1,
+        umbral_division=0.4, epochs_division=1000, paciencia_division=50))
+
+    # Iris: 4 features, 3 clases — 100% en el paper de RandomCloud
+    push!(resultados, bench("Iris (4f, 3c, n=150)", generar_iris_sintetico(; n=150, rng=copy(rng))...;
+        tamano_nube=50, umbral_acierto=0.4, epocas_refinamiento=1000,
+        topologia_inicial=[4, 8, 3], tasa_aprendizaje_nube=0.1,
+        umbral_division=0.4, epochs_division=1000, paciencia_division=50))
+
+    # Wine: 13 features, 3 clases — 94.4% en RandomCloud, 93.3% en DivisionNeuronal
+    push!(resultados, bench("Wine (13f, 3c, n=178)", generar_wine_sintetico(; n=178, rng=copy(rng))...;
+        tamano_nube=50, umbral_acierto=0.4, epocas_refinamiento=1000,
+        topologia_inicial=[13, 10, 3], tasa_aprendizaje_nube=0.1,
+        umbral_division=0.4, epochs_division=1000, paciencia_division=50))
+
+    # ── Multicapa: mismos datasets con topologías más profundas ───────────────
+
+    # Glass multicapa: ¿mejora con 2 capas ocultas?
+    push!(resultados, bench("Glass 2-capas", generar_glass_sintetico(; n=214, rng=copy(rng))...;
+        tamano_nube=50, umbral_acierto=0.3, epocas_refinamiento=1000,
+        topologia_inicial=[9, 12, 8, 6], tasa_aprendizaje_nube=0.05,
+        umbral_division=0.4, epochs_division=1000, paciencia_division=50))
+
+    # Ecoli multicapa
+    push!(resultados, bench("Ecoli 2-capas", generar_ecoli_sintetico(; n=327, rng=copy(rng))...;
+        tamano_nube=50, umbral_acierto=0.3, epocas_refinamiento=1000,
+        topologia_inicial=[7, 10, 8, 5], tasa_aprendizaje_nube=0.05,
+        umbral_division=0.4, epochs_division=1000, paciencia_division=50))
+
+    # Seeds multicapa
+    push!(resultados, bench("Seeds 2-capas", generar_seeds_sintetico(; n=210, rng=copy(rng))...;
+        tamano_nube=50, umbral_acierto=0.4, epocas_refinamiento=1000,
+        topologia_inicial=[7, 10, 6, 3], tasa_aprendizaje_nube=0.05,
+        umbral_division=0.4, epochs_division=1000, paciencia_division=50))
 
     resultados
 end
@@ -242,6 +341,11 @@ function main()
     if filtro in ("todos", "robustez")
         imprimir_separador("Robustez y edge cases")
         append!(todos, benchmarks_robustez(rng))
+    end
+
+    if filtro in ("todos", "papers")
+        imprimir_separador("Datasets de los papers (UCI-like)")
+        append!(todos, benchmarks_papers(rng))
     end
 
     imprimir_pie()
